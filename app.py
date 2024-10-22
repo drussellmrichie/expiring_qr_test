@@ -53,6 +53,15 @@ def index():
 
     return render_template('index.html', qr_code=latest_qr_code)
 
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    global current_url
+    if request.method == 'POST':
+        current_url = request.form['url']  # Admin submits a new URL
+        generate_new_qr_code(current_url)  # Generate a new QR code immediately
+        return redirect(url_for('admin'))  # Refresh the page after submission
+    return render_template('admin.html', current_url=current_url)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
