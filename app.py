@@ -3,14 +3,13 @@ import qrcode
 import time
 from flask import Flask, render_template, request, redirect, url_for
 from io import BytesIO
-from PIL import Image
 import base64
 
 app = Flask(__name__)
 
-# Store the current URL
+# Store the current URL and expiration details
 current_url = None
-last_generation_time = 0
+qr_codes = []  # List to store generated QR codes with expiration times
 
 def generate_qr_code(data):
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
@@ -28,25 +27,31 @@ def admin():
     global current_url
     if request.method == 'POST':
         current_url = request.form['url']  # Admin submits a new URL
+        generate_new_qr_code(current_url)  # Generate a new QR code immediately
         return redirect(url_for('admin'))  # Refresh the page after submission
     return render_template('admin.html')
 
+def generate_new_qr_code(url):
+    expiration_time = time.time() + 15  # Set expiration time for 15 seconds from now
+    qr_code = generate_qr_code(url)
+    qr_codes.append((qr_code, expiration_time))  # Store QR code and its expiration time
+
 @app.route('/')
 def index():
-    global current_url, last_generation_time
+    global qr_codes
 
-    if current_url is None:
-        return "No URL has been set by the administrator."
-
-    # Generate a new QR code if 15 seconds have passed
+    # Remove expired QR codes
     current_time = time.time()
-    if current_time - last_generation_time >= 15:
-        last_generation_time = current_time
-        qr_code = generate_qr_code(current_url)
-    else:
-        qr_code = generate_qr_code(current_url)  # Keep the same code for 15 seconds
+    qr_codes = [(code, exp) for code, exp in qr_codes if exp > current_time]
 
-    return render_template('index.html', qr_code=qr_code)
+    # Generate a new QR code if no valid QR codes exist
+    if not qr_codes:
+        return "No valid QR code available. Please check back later."
+
+    # Get the latest valid QR code
+    latest_qr_code = qr_codes[-1][0]  # Get the last valid QR code
+
+    return render_template('index.html', qr_code=latest_qr_code)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
