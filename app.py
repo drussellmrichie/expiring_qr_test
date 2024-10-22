@@ -79,4 +79,9 @@ def index():
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    # app.run(debug=True)
+    
+    # Get the port from the environment variable PORT
+    port = int(os.environ.get('PORT', 5000))
+    # Bind to '0.0.0.0' so the app is accessible externally
+    app.run(host='0.0.0.0', port=port, debug=True)
