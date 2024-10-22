@@ -3,6 +3,7 @@ import qrcode
 from io import BytesIO
 import sqlite3
 import time
+import os
 
 app = Flask(__name__)
 
